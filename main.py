@@ -16,24 +16,6 @@ from services.coaching.llm import LLMCoach
 from services.coaching.tts import TextToSpeech
 from services.coaching.voice_pipeline import VoicePipeline, autoplay_audio
 
-def get_rtc_config():
-    ice_servers = [{"urls": ["stun:stun.l.google.com:19302"]}]
-    try:
-        user = st.secrets.get("TURN_USERNAME")
-        cred = st.secrets.get("TURN_CREDENTIAL")
-    except Exception:
-        user = cred = None
-    if user and cred:
-        ice_servers.append({
-            "urls": [
-                "turn:global.relay.metered.ca:80",
-                "turn:global.relay.metered.ca:443",
-                "turns:global.relay.metered.ca:443?transport=tcp",
-            ],
-            "username": user,
-            "credential": cred,
-        })
-    return {"iceServers": ice_servers}
   
 def main():
     st.set_page_config(
@@ -55,7 +37,7 @@ def main():
 
     if "voice_pipeline" not in st.session_state:
         try:
-            api_key = os.environ.get("")
+            api_key = os.environ.get("GROQ_API_KEY", "")
 
             if not api_key and hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
                 api_key = st.secrets["GROQ_API_KEY"]
@@ -219,7 +201,7 @@ def main():
             key="exercise-analysis",
             mode=WebRtcMode.SENDRECV,
             video_processor_factory=VideoProcessorClass,
-            rtc_configuration=get_rtc_config(),
+            rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
             media_stream_constraints={
                 "video": True,
                 "audio": False
@@ -265,7 +247,7 @@ def main():
                 "Time (sec)": "sum"
             }).reset_index()
             agg_df.index += 1
-            st.table(agg_df)
+            st.table(agg_df, border="horizontal")
         else:
             st.info("No workout history found.")
 
